@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HuffZip — Real-Time .txt Compressor</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">HuffZip</div>
+    <span class="tagline">Lossless .txt compression via Huffman Coding</span>
+  </header>
+
+  <main>
+    <!-- Drop Zone -->
+    <section class="card drop-zone" id="dropZone">
+      <div class="drop-inner">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M8 12l4-4 4 4M12 8v8"/>
+        </svg>
+        <p>Drop a <code>.txt</code> file here</p>
+        <label class="btn btn-outline" for="fileInput">Browse File</label>
+        <input type="file" id="fileInput" accept=".txt" hidden />
+      </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar" id="statsBar" style="display:none">
+      <div class="stat">
+        <span class="stat-label">Original</span>
+        <span class="stat-value" id="origSize">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Compressed</span>
+        <span class="stat-value" id="compSize">—</span>
+      </div>
+      <div class="stat highlight">
+        <span class="stat-label">Reduction</span>
+        <span class="stat-value" id="reduction">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Ratio</span>
+        <span class="stat-value" id="ratio">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Entropy (bits/char)</span>
+        <span class="stat-value" id="entropy">—</span>
+      </div>
+    </section>
+
+    <!-- Progress Bar -->
+    <div class="progress-wrap" id="progressWrap" style="display:none">
+      <div class="progress-bar" id="progressBar"></div>
+      <span class="progress-label" id="progressLabel">Encoding…</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions" id="actions" style="display:none">
+      <button class="btn btn-primary" id="btnDownloadBin">⬇ Download Compressed (.huff)</button>
+      <button class="btn btn-secondary" id="btnDecompress">↩ Decompress & Verify</button>
+      <button class="btn btn-outline" id="btnReset">↺ Reset</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" id="tabs" style="display:none">
+      <button class="tab active" data-tab="frequency">Frequency Table</button>
+      <button class="tab" data-tab="codes">Huffman Codes</button>
+      <button class="tab" data-tab="tree">Tree Visualizer</button>
+      <button class="tab" data-tab="binary">Binary Preview</button>
+    </div>
+
+    <div class="tab-content" id="tabContent" style="display:none">
+      <!-- Frequency Table -->
+      <div class="tab-panel active" id="panel-frequency">
+        <table class="data-table" id="freqTable">
+          <thead><tr><th>Character</th><th>Frequency</th><th>Probability</th><th>Bar</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Huffman Codes -->
+      <div class="tab-panel" id="panel-codes">
+        <table class="data-table" id="codeTable">
+          <thead><tr><th>Character</th><th>Frequency</th><th>Huffman Code</th><th>Code Length</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Tree Visualizer -->
+      <div class="tab-panel" id="panel-tree">
+        <div class="tree-controls">
+          <label>Zoom: <input type="range" id="treeZoom" min="0.3" max="2" step="0.1" value="1" /></label>
+          <button class="btn btn-sm" id="btnExportTree">Export PNG</button>
+        </div>
+        <div class="tree-scroll">
+          <canvas id="treeCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Binary Preview -->
+      <div class="tab-panel" id="panel-binary">
+        <p class="hint">First 2 000 bits of the encoded bitstream:</p>
+        <div class="binary-view" id="binaryView"></div>
+      </div>
+    </div>
+
+    <!-- Decompress Verify Panel -->
+    <div class="verify-panel" id="verifyPanel" style="display:none">
+      <div class="verify-header">
+        <span id="verifyIcon">✅</span>
+        <strong id="verifyMsg">Decompressed text matches original — lossless ✓</strong>
+        <button class="btn btn-secondary" id="btnDownloadText" style="margin-left:auto">⬇ Download Decompressed Text</button>
+      </div>
+      <textarea class="text-preview" id="decompressedPreview" readonly rows="10"></textarea>
+    </div>
+  </main>
+
+  <footer>
+    <p>HuffZip — Browser-native Huffman Coding · No server · No data leaves your device</p>
+  </footer>
+
+  <script src="src/huffman.js"></script>
+  <script src="src/tree-renderer.js"></script>
+  <script src="src/ui.js"></script>
+</body>
+</html>
