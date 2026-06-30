@@ -1,20 +1,12 @@
-/**
- * tree-renderer.js — Canvas Huffman Tree Visualizer
- * Renders the binary tree with node labels, frequencies, and edges.
- */
-
+/* tree-renderer.js — canvas Huffman tree visualizer */
 "use strict";
 
 class TreeRenderer {
-  /**
-   * @param {HTMLCanvasElement} canvas
-   */
   constructor(canvas) {
     this.canvas = canvas;
-    this.ctx    = canvas.getContext('2d');
-    this.zoom   = 1;
-    this._root  = null;
-    this._layout = null;
+    this.ctx = canvas.getContext('2d');
+    this.zoom = 1;
+    this._root = null;
   }
 
   setZoom(z) {
@@ -22,171 +14,96 @@ class TreeRenderer {
     if (this._root) this.render(this._root);
   }
 
-  /**
-   * Layout the tree: assign x/y positions.
-   * Uses a simple recursive approach with horizontal spacing.
-   */
-  _layout_tree(root) {
-    // First pass: count leaves for x-spacing
-    const nodeList = [];
-    let leafIndex = 0;
-
-    const assignX = (node, depth) => {
-      if (!node) return;
-      node._depth = depth;
-      if (node.isLeaf) {
-        node._x = leafIndex++;
-      } else {
-        assignX(node.left,  depth + 1);
-        assignX(node.right, depth + 1);
-        node._x = (node.left._x + node.right._x) / 2;
-      }
-      nodeList.push(node);
-    };
-    assignX(root, 0);
-    return { nodeList, leafCount: leafIndex };
-  }
-
-  render(root) {
-    this._root = root;
-    const canvas = this.canvas;
-    const ctx    = this.ctx;
-
-    // Compute layout
-    const { nodeList, leafCount } = this._layout_tree(root);
-
-    // Sizing
-    const NODE_R  = 22;
-    const H_GAP   = 56;   // horizontal gap between leaves
-    const V_GAP   = 72;   // vertical gap between levels
-    const PAD     = 60;
-
-    // Determine max depth
-    let maxDepth = 0;
-    for (const n of nodeList) if (n._depth > maxDepth) maxDepth = n._depth;
-
-    const W = Math.max(640, leafCount * H_GAP + PAD * 2);
-    const H = (maxDepth + 1) * V_GAP + PAD * 2;
-
-    canvas.width  = Math.ceil(W * this.zoom);
-    canvas.height = Math.ceil(H * this.zoom);
-
-    ctx.scale(this.zoom, this.zoom);
-    ctx.clearRect(0, 0, W, H);
-
-    // Background
-    ctx.fillStyle = '#161922';
-    ctx.fillRect(0, 0, W, H);
-
-    // Helpers: actual x/y from tree coordinates
-    const nx = n => PAD + n._x * H_GAP;
-    const ny = n => PAD + n._depth * V_GAP;
-
-    // Draw edges first
-    const drawEdges = (node) => {
-      if (!node) return;
-      if (node.left) {
-        ctx.beginPath();
-        ctx.moveTo(nx(node), ny(node));
-        ctx.lineTo(nx(node.left), ny(node.left));
-        ctx.strokeStyle = '#2a3040';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        // Edge label
-        const ex = (nx(node) + nx(node.left)) / 2 - 8;
-        const ey = (ny(node) + ny(node.left)) / 2;
-        ctx.fillStyle = '#6b7896';
-        ctx.font = '11px monospace';
-        ctx.fillText('0', ex, ey);
-        drawEdges(node.left);
-      }
-      if (node.right) {
-        ctx.beginPath();
-        ctx.moveTo(nx(node), ny(node));
-        ctx.lineTo(nx(node.right), ny(node.right));
-        ctx.strokeStyle = '#2a3040';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        const ex = (nx(node) + nx(node.right)) / 2 + 4;
-        const ey = (ny(node) + ny(node.right)) / 2;
-        ctx.fillStyle = '#6b7896';
-        ctx.font = '11px monospace';
-        ctx.fillText('1', ex, ey);
-        drawEdges(node.right);
-      }
-    };
-    drawEdges(root);
-
-    // Draw nodes
-    const drawNodes = (node) => {
-      if (!node) return;
-
-      const x = nx(node);
-      const y = ny(node);
-      const isLeaf = node.isLeaf;
-
-      // Circle
-      ctx.beginPath();
-      ctx.arc(x, y, NODE_R, 0, Math.PI * 2);
-
-      if (isLeaf) {
-        ctx.fillStyle = '#00e5a0';
-        ctx.fill();
-        ctx.strokeStyle = '#007aff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = '#1e2330';
-        ctx.fill();
-        ctx.strokeStyle = '#2a3040';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-
-      // Character label (leaf nodes)
-      if (isLeaf && node.char !== null) {
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 12px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const label = TreeRenderer.charLabel(node.char);
-        ctx.fillText(label, x, y - 4);
-        ctx.font = '9px monospace';
-        ctx.fillText(node.freq, x, y + 7);
-      } else {
-        // Internal node: show frequency
-        ctx.fillStyle = '#6b7896';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(node.freq, x, y);
-      }
-
-      drawNodes(node.left);
-      drawNodes(node.right);
-    };
-    drawNodes(root);
-
-    // Reset scale for next render
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }
-
-  /**
-   * Convert special chars to readable labels.
-   */
   static charLabel(ch) {
     const map = { ' ': 'SP', '\n': '\\n', '\t': '\\t', '\r': '\\r', '\0': 'NUL' };
     return map[ch] || (ch.charCodeAt(0) < 32 ? `#${ch.charCodeAt(0)}` : ch);
   }
 
-  /**
-   * Export canvas as PNG and trigger download.
-   */
   exportPNG(filename = 'huffman-tree.png') {
     const link = document.createElement('a');
     link.download = filename;
     link.href = this.canvas.toDataURL('image/png');
     link.click();
+  }
+
+  render(root) {
+    this._root = root;
+    const { ctx, canvas } = this;
+
+    // assign x (leaf order, averaged up) and depth to every node
+    let leafIndex = 0, maxDepth = 0;
+    const nodes = [];
+    (function assign(node, depth) {
+      if (!node) return;
+      node._depth = depth;
+      maxDepth = Math.max(maxDepth, depth);
+      if (node.isLeaf) {
+        node._x = leafIndex++;
+      } else {
+        assign(node.left, depth + 1);
+        assign(node.right, depth + 1);
+        node._x = (node.left._x + node.right._x) / 2;
+      }
+      nodes.push(node);
+    })(root, 0);
+
+    const R = 22, HGAP = 56, VGAP = 72, PAD = 60;
+    const W = Math.max(640, leafIndex * HGAP + PAD * 2);
+    const H = (maxDepth + 1) * VGAP + PAD * 2;
+    canvas.width = Math.ceil(W * this.zoom);
+    canvas.height = Math.ceil(H * this.zoom);
+    ctx.setTransform(this.zoom, 0, 0, this.zoom, 0, 0);
+    ctx.fillStyle = '#161922';
+    ctx.fillRect(0, 0, W, H);
+
+    const x = n => PAD + n._x * HGAP, y = n => PAD + n._depth * VGAP;
+
+    (function drawEdges(node) {
+      if (!node) return;
+      for (const [child, bit, dx] of [[node.left, '0', -8], [node.right, '1', 4]]) {
+        if (!child) continue;
+        ctx.beginPath();
+        ctx.moveTo(x(node), y(node));
+        ctx.lineTo(x(child), y(child));
+        ctx.strokeStyle = '#2a3040';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#6b7896';
+        ctx.font = '11px monospace';
+        ctx.fillText(bit, (x(node) + x(child)) / 2 + dx, (y(node) + y(child)) / 2);
+        drawEdges(child);
+      }
+    })(root);
+
+    (function drawNodes(node) {
+      if (!node) return;
+      const cx = x(node), cy = y(node);
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fillStyle = node.isLeaf ? '#00e5a0' : '#1e2330';
+      ctx.fill();
+      ctx.strokeStyle = node.isLeaf ? '#007aff' : '#2a3040';
+      ctx.lineWidth = node.isLeaf ? 2 : 1.5;
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (node.isLeaf && node.char !== null) {
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(TreeRenderer.charLabel(node.char), cx, cy - 4);
+        ctx.font = '9px monospace';
+        ctx.fillText(node.freq, cx, cy + 7);
+      } else {
+        ctx.fillStyle = '#6b7896';
+        ctx.font = '10px monospace';
+        ctx.fillText(node.freq, cx, cy);
+      }
+      drawNodes(node.left);
+      drawNodes(node.right);
+    })(root);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 }
 
