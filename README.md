@@ -1,4 +1,5 @@
 # HuffZip — Real-Time .txt Compressor (Huffman Coding)
+https://srivaatsavreddy45.github.io/Huffman-file-compresser/
 
 > Browser-native lossless compression for `.txt` files using Huffman Coding.  
 > Achieves **50–60% size reduction** · Zero server · No data leaves your device.
